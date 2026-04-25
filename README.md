@@ -22,7 +22,7 @@ A robust **NestJS-based microservice** designed to manage employee time-off requ
 | **ORM** | [Prisma](https://www.prisma.io/) |
 | **Database** | SQLite (Development) |
 | **HTTP Client** | Axios |
-| **Documentation** | Swagger / OpenAPI |
+| **Documentation** | Swagger|
 
 ---
 
