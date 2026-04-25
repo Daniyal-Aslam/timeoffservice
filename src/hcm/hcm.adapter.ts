@@ -9,7 +9,7 @@ import { CreateRequestDto } from '../request/dto/create-request.dto';
 
 @Injectable()
 export class HcmAdapter {
-  private baseUrl = 'http://localhost:4000';
+  private baseUrl = process.env.BASE_URL;
 
   async validateBalance(dto: CreateRequestDto) {
     try {
