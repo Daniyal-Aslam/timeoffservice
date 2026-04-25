@@ -1,178 +1,136 @@
-Time-Off Service (Backend)
+# Time-Off Service (Backend)
 
-A NestJS-based microservice for managing employee time-off requests with external HCM integration.
+A robust **NestJS-based microservice** designed to manage employee time-off requests. This service features seamless external HCM (Human Capital Management) integration, automated balance validation, and real-time synchronization.
 
-⸻
+---
 
-Features
+##  Features
 
-* Create time-off requests
-* Validate leave balance via HCM
-* Sync employee balances
-* Swagger API documentation
-* Fault-tolerant external integration
+* **Request Management:** Create and track employee time-off requests.
+* **Balance Validation:** Real-time leave balance checks via external HCM integration.
+* **Data Synchronization:** Batch sync employee balances to keep local records updated.
+* **API Documentation:** Fully interactive API documentation powered by Swagger.
+* **Resilience:** Fault-tolerant logic for handling external service integrations.
 
-⸻
+---
 
-Tech Stack
+##  Tech Stack
 
-* NestJS
-* Prisma ORM
-* SQLite (development)
-* Axios
-* Swagger
+| Layer | Technology |
+| :--- | :--- |
+| **Framework** | [NestJS](https://nestjs.com/) |
+| **ORM** | [Prisma](https://www.prisma.io/) |
+| **Database** | SQLite (Development) |
+| **HTTP Client** | Axios |
+| **Documentation** | Swagger / OpenAPI |
 
-⸻
+---
 
-COMPLETE SETUP GUIDE
+##  Setup & Installation
 
-Follow these steps to run the backend locally.
+Follow these steps to get the service running on your local machine.
 
-⸻
-
-Clone Repository
-
+### 1. Clone the Repository
+```bash
 git clone https://github.com/Daniyal-Aslam/timeoffservice.git
 cd timeoffservice
+```
 
-⸻
-
-Install Dependencies
-
+### 2. Install Dependencies
+```bash
 npm install
+```
 
-⸻
-
-Setup Environment Variables
-
-Create a .env file in the root directory:
-
+### 3. Environment Configuration
+Create a `.env` file in the root directory and add the following variables:
+```env
 PORT=3000
 DATABASE_URL="file:./dev.db"
 HCM_BASE_URL=http://localhost:4000
+```
 
-⸻
+---
 
-Setup Database (Prisma)
+##  Database Management (Prisma)
 
-Generate Prisma client:
+Initialize the database and generate the client:
 
-npx prisma generate
+1.  **Generate Prisma Client:**
+    ```bash
+    npx prisma generate
+    ```
+2.  **Run Migrations:**
+    ```bash
+    npx prisma migrate dev --name init
+    ```
+3.  **Explore Data (Optional):**
+    To view your data in a GUI, run:
+    ```bash
+    npx prisma studio
+    ```
 
-Run migrations:
+---
 
-npx prisma migrate dev --name init
+##  Running the Application
 
-(Optional) Open database UI:
+This service requires a connection to an HCM server. A mock server is provided for local development.
 
-npx prisma studio
-
-⸻
-
-Start Mock HCM Server (Required)
-
-Open a new terminal and run:
-
+### Step 1: Start Mock HCM Server
+In a new terminal window, run:
+```bash
 npx ts-node mock-hcm/server.ts
+```
+> **Note:** You should see `Mock HCM running on http://localhost:4000`.
 
-You should see:
-
-Mock HCM running on http://localhost:4000
-
-⸻
-
-Start Backend Server
-
+### Step 2: Start the Backend Server
+In your main terminal, run:
+```bash
 npm run start:dev
+```
+> **Note:** You should see `Nest application successfully started`.
 
-You should see:
+---
 
-Nest application successfully started
+##  API Documentation
 
-⸻
+Once the server is running, you can access the interactive Swagger UI to explore and test the API endpoints:
 
-Open Swagger UI
+🔗 **URL:** `http://localhost:3000/api`
 
-Open in your browser:
+### Primary Endpoints
 
-http://localhost:3000/api
+* **`GET /balances`**: Retrieve balance for a specific employee.
+    * *Params:* `employeeId`, `locationId`.
+* **`POST /requests`**: Submit a new time-off request.
+    * *Body:* `{ "employeeId": "emp1", "locationId": "loc1", "daysRequested": 2 }`
+    * *Result:* Returns `APPROVED` or `REJECTED` based on HCM balance.
+* **`POST /sync/batch`**: Trigger a manual sync of balances from the HCM.
 
-⸻
+---
 
-Test the System
+##  System Flow
 
-Use Swagger UI to test the following endpoints:
 
-GET /balances
 
-Retrieve employee balance
+1.  **User/Frontend** → Triggers request via **Swagger UI**.
+2.  **NestJS Backend** → Processes business logic and validation.
+3.  **Mock HCM Server** → External source of truth for leave balances.
+4.  **Prisma/SQLite** → Local persistence for request history and synced data.
 
-Example:
+---
 
-* employeeId: emp1
-* locationId: loc1
-
-⸻
-
-POST /requests
-
-Create a time-off request
-
-Example body:
-
-{
-  "employeeId": "emp1",
-  "locationId": "loc1",
-  "daysRequested": 2
-}
-
-Expected:
-
-* APPROVED → if balance is sufficient
-* REJECTED → if balance is insufficient
-
-⸻
-
-POST /sync/batch
-
-Sync balances from HCM
-
-⸻
-
-System Flow
-
-Swagger / Frontend
-        ↓
-Backend (NestJS)
-        ↓
-Mock HCM Server
-        ↓
-Database (Prisma)
-
-⸻
-
-Run Tests
-
+##  Testing
+To ensure the system is functioning correctly, run the end-to-end tests:
+```bash
 npm run test:e2e
+```
 
-⸻
+---
 
-Common Issues
+##  Troubleshooting
 
-Prisma error
-
-npx prisma generate
-
-⸻
-
-Migration issues
-
-npx prisma migrate reset
-
-⸻
-
-HCM not working
-
-Make sure this is running:
-
-npx ts-node mock-hcm/server.ts
+| Issue | Solution |
+| :--- | :--- |
+| **Prisma Client Not Found** | Run `npx prisma generate` |
+| **Migration Conflicts** | Run `npx prisma migrate reset` |
+| **HCM Connection Refused** | Ensure the mock server is running on port `4000` |
