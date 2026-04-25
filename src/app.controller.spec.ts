@@ -3,20 +3,36 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
 describe('AppController', () => {
-  let appController: AppController;
+  let controller: AppController;
+  let service: AppService;
 
   beforeEach(async () => {
-    const app: TestingModule = await Test.createTestingModule({
+    const module: TestingModule = await Test.createTestingModule({
       controllers: [AppController],
       providers: [AppService],
     }).compile();
 
-    appController = app.get<AppController>(AppController);
+    controller = module.get<AppController>(AppController);
+    service = module.get<AppService>(AppService);
   });
 
-  describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+  describe('health', () => {
+    it('should return service health info', () => {
+      jest.spyOn(service, 'getHealth').mockReturnValue({
+        status: 'ok',
+        service: 'timeoff-service',
+        version: '1.0.0',
+        uptime: 123,
+        timestamp: '2026-01-01T00:00:00.000Z',
+      });
+
+      expect(controller.health()).toEqual({
+        status: 'ok',
+        service: 'timeoff-service',
+        version: '1.0.0',
+        uptime: 123,
+        timestamp: '2026-01-01T00:00:00.000Z',
+      });
     });
   });
 });

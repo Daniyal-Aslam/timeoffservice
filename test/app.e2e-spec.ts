@@ -7,6 +7,8 @@ import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
 
 let hcmServer: any; 
+let isHcmDown = false;
+
 function startMockHCM(port = 4000) {
   const app = express();
   app.use(express.json());
@@ -16,6 +18,9 @@ function startMockHCM(port = 4000) {
   };
 
   app.get('/balance', (req, res) => {
+    if (isHcmDown) {
+      return res.status(503).json({ error: 'HCM down' });
+    }
     const key = `${req.query.employeeId}-${req.query.locationId}`;
     const balance = balances[key] ?? 0;
 
@@ -26,6 +31,9 @@ function startMockHCM(port = 4000) {
   });
 
   app.post('/request', (req, res) => {
+    if (isHcmDown) {
+      return res.status(503).json({ success: false });
+    }
     const key = `${req.body.employeeId}-${req.body.locationId}`;
     const current = balances[key] ?? 0;
 
@@ -67,6 +75,20 @@ describe('TimeOff (e2e)', () => {
     await prisma.employeeBalance.deleteMany();
   });
 
+  beforeEach(async () => {
+    // reset DB
+    await prisma.timeOffRequest.deleteMany();
+    await prisma.employeeBalance.deleteMany();
+
+    isHcmDown = false;
+
+    // restart mock HCM to reset balances
+    if (hcmServer) {
+      hcmServer.close();
+    }
+    hcmServer = await startMockHCM(4000);
+  });
+
   afterAll(async () => {
     await app.close();
     hcmServer.close();
@@ -102,7 +124,6 @@ describe('TimeOff (e2e)', () => {
   });
  
   it('should not allow exceeding balance after multiple requests', async () => { 
-
     await request(app.getHttpServer())
       .post('/requests')
       .send({
@@ -122,8 +143,8 @@ describe('TimeOff (e2e)', () => {
       .expect(400);
   });
  
-  it('should fail gracefully if HCM is down', async () => { 
-    hcmServer.close();
+  it('should fail if HCM is down', async () => { 
+    isHcmDown = true;
 
     const res = await request(app.getHttpServer())
       .post('/requests')
@@ -133,7 +154,7 @@ describe('TimeOff (e2e)', () => {
         daysRequested: 1,
       });
 
-    expect([400, 500]).toContain(res.status); 
+    expect([400, 500, 502, 503]).toContain(res.status); 
     hcmServer = await startMockHCM(4000);
   });
 });

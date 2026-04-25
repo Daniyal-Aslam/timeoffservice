@@ -1,47 +1,54 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, BadGatewayException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import axios from 'axios';
+import { HcmAdapter } from '../hcm/hcm.adapter';
 
 @Injectable()
 export class SyncService {
   private readonly logger = new Logger(SyncService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private hcm: HcmAdapter,
+  ) {}
 
   async batchSync() {
     try {
-      const res = await axios.get('http://localhost:4000/batch');
-
-      const updates = res.data.map((item: any) =>
+      const data = await this.hcm.getBatchBalances();
+  
+      if (!Array.isArray(data)) {
+        throw new Error('Invalid HCM response');
+      }
+  
+      const updates = data.map((item) =>
         this.prisma.employeeBalance.upsert({
-          where: { id: `${item.employeeId}-${item.locationId}` },
+          where: {
+            employeeId_locationId: {
+              employeeId: item.employeeId,
+              locationId: item.locationId,
+            },
+          },
           update: {
             balance: item.balance,
             lastSyncedAt: new Date(),
           },
           create: {
-            id: `${item.employeeId}-${item.locationId}`,
-            ...item,
+            employeeId: item.employeeId,
+            locationId: item.locationId,
+            balance: item.balance,
             lastSyncedAt: new Date(),
           },
         }),
       );
-
-      await Promise.all(updates);  
-
-      this.logger.log(`Synced ${updates.length} balances from HCM`);
-
+  
+      await Promise.all(updates);
+  
       return {
         success: true,
         count: updates.length,
       };
     } catch (error) {
-      this.logger.error('Batch sync failed', error.message);
-
-      return {
-        success: false,
-        error: 'HCM sync failed',
-      };
+      this.logger.error('Batch sync failed', error?.message || error);
+      throw new BadGatewayException('HCM sync failed');
     }
   }
 }

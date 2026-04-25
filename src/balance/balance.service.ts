@@ -6,17 +6,28 @@ export class BalanceService {
   constructor(private prisma: PrismaService) {}
 
   async getBalance(employeeId: string, locationId: string) {
-    return this.prisma.employeeBalance.findFirst({
-      where: { employeeId, locationId },
+    const balance = await this.prisma.employeeBalance.findUnique({
+      where: {
+        employeeId_locationId: { employeeId, locationId },
+      },
     });
+
+    return (
+      balance || {
+        employeeId,
+        locationId,
+        balance: 0,
+      }
+    );
   }
 
   async updateBalance(employeeId: string, locationId: string, balance: number) {
     return this.prisma.employeeBalance.upsert({
-      where: { id: `${employeeId}-${locationId}` },
+      where: {
+        employeeId_locationId: { employeeId, locationId },
+      },
       update: { balance },
       create: {
-        id: `${employeeId}-${locationId}`,
         employeeId,
         locationId,
         balance,

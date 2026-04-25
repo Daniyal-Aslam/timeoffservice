@@ -8,14 +8,13 @@ generator client {
 }
 
 model EmployeeBalance {
-  id           String   @id @default(uuid())
   employeeId   String
   locationId   String
   balance      Float
   version      Int      @default(1)
   lastSyncedAt DateTime @default(now())
 
-  @@unique([employeeId, locationId])
+  @@id([employeeId, locationId])
 }
 
 model TimeOffRequest {

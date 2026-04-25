@@ -1,6 +1,11 @@
-import { Module } from '@nestjs/common';
+import {
+  Module,
+  MiddlewareConsumer,
+  NestModule,
+} from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
+import { LoggerMiddleware } from './common/logger.middleware';
 import { BalanceModule } from './balance/balance.module';
 import { RequestModule } from './request/request.module';
 import { SyncModule } from './sync/sync.module';
@@ -9,7 +14,7 @@ import { HcmModule } from './hcm/hcm.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true, // makes env available everywhere
+      isGlobal: true,
     }),
     BalanceModule,
     RequestModule,
@@ -17,4 +22,8 @@ import { HcmModule } from './hcm/hcm.module';
     HcmModule,
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(LoggerMiddleware).forRoutes('*'); 
+  }
+}
